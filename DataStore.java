@@ -95,9 +95,9 @@ public class DataStore {
     private void seedData() {
         // Users
         User admin   = new User("Admin User",   "admin@exam.com",   "admin123",   User.Role.ADMIN);
-        User alice   = new User("Alice Johnson","alice@exam.com",   "alice123",   User.Role.STUDENT);
-        User bob     = new User("Bob Smith",    "bob@exam.com",     "bob123",     User.Role.STUDENT);
-        users.addAll(List.of(admin, alice, bob));
+        User pulkit   = new User("Pulkit","pulkit@gmail.com",   "pulkit123",   User.Role.STUDENT);
+        User vaibhav     = new User("Vaibhav",    "vaibhav@gmail.com",     "vaibhav123",     User.Role.STUDENT);
+        users.addAll(List.of(admin, pulkit, vaibhav));
 
         // ── Exam 1: Java Basics ───────────────────────────────────────────────
         Exam java = new Exam("Java Programming Basics",
@@ -185,14 +185,14 @@ public class DataStore {
         exams.addAll(List.of(java, gk, math, draft));
 
         // ── Sample completed attempts ─────────────────────────────────────────
-        ExamAttempt a1 = new ExamAttempt(alice.getId(), java.getId(), java.getTitle());
+        ExamAttempt a1 = new ExamAttempt(pulkit.getId(), java.getId(), java.getTitle());
         a1.recordAnswer(1, 'A'); a1.recordAnswer(2, 'B'); a1.recordAnswer(3, 'C');
         a1.recordAnswer(4, 'A'); a1.recordAnswer(5, 'C'); a1.recordAnswer(6, 'C');
         a1.recordAnswer(7, 'C'); a1.recordAnswer(8, 'C');
         a1.submit(9, java.getTotalMarks(), true);
         attempts.add(a1);
 
-        ExamAttempt a2 = new ExamAttempt(alice.getId(), gk.getId(), gk.getTitle());
+        ExamAttempt a2 = new ExamAttempt(vaibhav.getId(), gk.getId(), gk.getTitle());
         a2.recordAnswer(9, 'B'); a2.recordAnswer(10, 'C'); a2.recordAnswer(11, 'C');
         a2.recordAnswer(12, 'B'); a2.recordAnswer(13, 'D'); a2.recordAnswer(14, 'C');
         a2.submit(6, gk.getTotalMarks(), true);
