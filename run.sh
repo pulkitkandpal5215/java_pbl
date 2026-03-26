@@ -27,10 +27,7 @@ echo "✅ Compilation successful!"
 echo ""
 echo "🚀 Launching the application..."
 echo ""
-echo "Demo Accounts:"
-echo "  Admin:   admin@exam.com   / admin123"
-echo "  Student: alice@exam.com   / alice123"
-echo "  Student: bob@exam.com     / bob123"
+
 echo ""
 
 # Run

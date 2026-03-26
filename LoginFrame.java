@@ -11,7 +11,7 @@ import java.awt.geom.*;
 
 /**
  * 🔐 Login Screen
- * First screen — users sign in or navigate to registration.
+ * First screen — user login or sign in kar sakta hai.
  */
 public class LoginFrame extends JFrame {
 
@@ -22,7 +22,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
         setTitle("ExamPortal — Login");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(480, 580);
+        setSize(580, 680);
         setLocationRelativeTo(null);
         setResizable(false);
         setContentPane(buildUI());
@@ -45,7 +45,7 @@ public class LoginFrame extends JFrame {
                 g2.dispose();
             }
         };
-        root.setOpaque(false);
+        root.setOpaque(true);
 
         // ── Header ────────────────────────────────────────────────────────────
         JPanel header = new JPanel();
@@ -125,6 +125,7 @@ public class LoginFrame extends JFrame {
 
         // Demo credentials hint
         JPanel demoPanel = new JPanel();
+        demoPanel.setOpaque(true);
         demoPanel.setBackground(new Color(UITheme.ACCENT.getRed(), UITheme.ACCENT.getGreen(),
             UITheme.ACCENT.getBlue(), 25));
         demoPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -133,16 +134,24 @@ public class LoginFrame extends JFrame {
             new EmptyBorder(8, 12, 8, 12)
         ));
         demoPanel.setLayout(new BoxLayout(demoPanel, BoxLayout.Y_AXIS));
+        demoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        demoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+
         JLabel demoTitle = new JLabel("Demo Accounts");
         demoTitle.setFont(new Font("SansSerif", Font.BOLD, 11));
         demoTitle.setForeground(UITheme.ACCENT);
         demoTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JLabel d1 = new JLabel("Admin: admin@exam.com / admin123");
         d1.setFont(UITheme.FONT_SMALL);
         d1.setForeground(UITheme.TEXT_MUTED);
-        JLabel d2 = new JLabel("Student: alice@exam.com / alice123");
+        d1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel d2 = new JLabel("Student: pulkit@gmail.com / pulkit123");
         d2.setFont(UITheme.FONT_SMALL);
         d2.setForeground(UITheme.TEXT_MUTED);
+        d2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         demoPanel.add(demoTitle);
         demoPanel.add(Box.createVerticalStrut(2));
         demoPanel.add(d1);
@@ -168,7 +177,6 @@ public class LoginFrame extends JFrame {
         card.add(Box.createVerticalStrut(14));
         card.add(regRow);
         card.add(Box.createVerticalStrut(14));
-        card.add(demoPanel);
 
         JPanel center = new JPanel();
         center.setOpaque(false);
@@ -176,8 +184,16 @@ public class LoginFrame extends JFrame {
         center.setLayout(new BorderLayout());
         center.add(card, BorderLayout.CENTER);
 
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.setLayout(new BorderLayout());
+        bottom.setBorder(new EmptyBorder(0, 40, 40, 40));
+        bottom.add(demoPanel, BorderLayout.CENTER);
+
         root.add(header, BorderLayout.NORTH);
         root.add(center, BorderLayout.CENTER);
+        root.add(bottom, BorderLayout.SOUTH);
+
         return root;
     }
 
