@@ -45,7 +45,7 @@ public class LoginFrame extends JFrame {
                 g2.dispose();
             }
         };
-        root.setOpaque(true);
+        root.setOpaque(false);
 
         // ── Header ────────────────────────────────────────────────────────────
         JPanel header = new JPanel();
