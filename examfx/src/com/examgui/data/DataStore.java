@@ -41,6 +41,11 @@ public class DataStore {
             examsCollection = database.getCollection("exams");
             attemptsCollection = database.getCollection("attempts");
             System.out.println("DataStore initialized successfully");
+
+            // Seed data if database is empty
+            if (usersCollection.countDocuments() == 0) {
+                seedData();
+            }
         } catch (Exception e) {
             System.err.println("Failed to connect to MongoDB: " + e.getMessage());
             System.err.println("Falling back to in-memory storage.");
@@ -165,6 +170,14 @@ public class DataStore {
         try {
             Document doc = attemptToDocument(a);
             attemptsCollection.replaceOne(Filters.eq("_id", new ObjectId(a.getId())), doc);
+        } catch (IllegalArgumentException ex) {
+            // Invalid ID, ignore
+        }
+    }
+
+    public void deleteAttempt(String attemptId) {
+        try {
+            attemptsCollection.deleteOne(Filters.eq("_id", new ObjectId(attemptId)));
         } catch (IllegalArgumentException ex) {
             // Invalid ID, ignore
         }
@@ -304,8 +317,13 @@ public class DataStore {
         ExamAttempt attempt = new ExamAttempt(studentId, examId, examTitle);
         attempt.setId(id);
         
+        String startedAtStr = doc.getString("startedAt");
+        if (startedAtStr != null) {
+            attempt.setStartedAt(LocalDateTime.parse(startedAtStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        
         // Load answers
-        @SuppressWarnings("unchecked")
+        
         Document answersDoc = (Document) doc.get("answers");
         if (answersDoc != null) {
             for (String key : answersDoc.keySet()) {
@@ -332,6 +350,8 @@ public class DataStore {
             );
         }
         
+        attempt.setViolations(doc.getInteger("violations", 0));
+        
         return attempt;
     }
 
@@ -347,7 +367,8 @@ public class DataStore {
             .append("examTitle", a.getExamTitle())
             .append("startedAt", a.getStartedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .append("status", a.getStatus().toString())
-            .append("answers", answersDoc);
+            .append("answers", answersDoc)
+            .append("violations", a.getViolations());
             
         if (a.getStatus() == ExamAttempt.Status.SUBMITTED || a.getStatus() == ExamAttempt.Status.TIMED_OUT) {
             doc.append("submittedAt", a.getSubmittedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))

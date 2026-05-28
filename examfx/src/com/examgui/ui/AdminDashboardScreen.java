@@ -230,7 +230,27 @@ public class AdminDashboardScreen {
             return new SimpleStringProperty(String.format("%.1f%%", avg));
         });
 
-        table.getColumns().addAll(idCol, nameCol, emailCol, attemptsCol, avgCol);
+        TableColumn<User, Void> actCol = new TableColumn<>("Actions");
+        actCol.setMinWidth(130);
+        actCol.setCellFactory(col -> new TableCell<>() {
+            private final Button reportBtn = smallBtn("View Report", UITheme.ACCENT);
+            {
+                reportBtn.setOnAction(e -> {
+                    User student = getTableView().getItems().get(getIndex());
+                    openStudentReportDialog(student);
+                });
+            }
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                HBox box = new HBox(reportBtn);
+                box.setAlignment(Pos.CENTER);
+                box.setPadding(new Insets(4, 0, 4, 0));
+                setGraphic(box);
+            }
+        });
+
+        table.getColumns().addAll(idCol, nameCol, emailCol, attemptsCol, avgCol, actCol);
         table.setItems(FXCollections.observableArrayList(DataStore.get().getAllStudents()));
 
         VBox top = new VBox(0, heading);
@@ -253,22 +273,66 @@ public class AdminDashboardScreen {
         double avgScore = all.isEmpty() ? 0 :
             all.stream().mapToDouble(ExamAttempt::getPercentage).average().orElse(0);
 
+        // Summary labels
+        Label totalValLabel = new Label(String.valueOf(all.size()));
+        Label passedValLabel = new Label(String.valueOf(passed));
+        Label failedValLabel = new Label(String.valueOf(failed));
+        Label avgValLabel = new Label(String.format("%.1f%%", avgScore));
+
+        for (Label lbl : new Label[]{totalValLabel, passedValLabel, failedValLabel, avgValLabel}) {
+            lbl.setFont(Font.font("SansSerif", FontWeight.BOLD, 30));
+        }
+        totalValLabel.setTextFill(Color.web(UITheme.ACCENT));
+        passedValLabel.setTextFill(Color.web(UITheme.ACCENT_GREEN));
+        failedValLabel.setTextFill(Color.web(UITheme.ACCENT_DANGER));
+        avgValLabel.setTextFill(Color.web(UITheme.ACCENT_WARN));
+
         // Summary cards
         HBox cards = new HBox(16);
         cards.setPadding(new Insets(0, 0, 20, 0));
         cards.getChildren().addAll(
-            summaryCard("📋", "Total Attempts", String.valueOf(all.size()), UITheme.ACCENT),
-            summaryCard("✅", "Passed",          String.valueOf(passed),    UITheme.ACCENT_GREEN),
-            summaryCard("❌", "Failed",           String.valueOf(failed),    UITheme.ACCENT_DANGER),
-            summaryCard("📊", "Avg Score",        String.format("%.1f%%", avgScore), UITheme.ACCENT_WARN)
+            summaryCard("📋", "Total Attempts", totalValLabel),
+            summaryCard("✅", "Passed",          passedValLabel),
+            summaryCard("❌", "Failed",           failedValLabel),
+            summaryCard("📊", "Avg Score",        avgValLabel)
         );
 
         // Attempts table
-        Label tableTitle = UITheme.heading("All Exam Attempts");
-        tableTitle.setPadding(new Insets(0, 0, 12, 0));
-
-        TableView<ExamAttempt> table = new TableView<>();
+        final TableView<ExamAttempt> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Header and filter row
+        HBox tableHeader = new HBox(12);
+        tableHeader.setAlignment(Pos.CENTER_LEFT);
+        tableHeader.setPadding(new Insets(0, 0, 12, 0));
+
+        Label tableTitle = UITheme.heading("All Exam Attempts");
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        TextField filterField = UITheme.textField("Search exam name...");
+        filterField.setPrefWidth(220);
+        filterField.textProperty().addListener((observable, oldValue, newValue) -> {
+            String query = newValue.trim().toLowerCase();
+            List<ExamAttempt> filtered = all.stream()
+                .filter(a -> a.getExamTitle().toLowerCase().contains(query))
+                .toList();
+            table.setItems(FXCollections.observableArrayList(filtered));
+            
+            // Recalculate summary metrics
+            long newPassed = filtered.stream().filter(ExamAttempt::isPassed).count();
+            long newFailed = filtered.size() - newPassed;
+            double newAvg = filtered.isEmpty() ? 0 :
+                filtered.stream().mapToDouble(ExamAttempt::getPercentage).average().orElse(0);
+                
+            totalValLabel.setText(String.valueOf(filtered.size()));
+            passedValLabel.setText(String.valueOf(newPassed));
+            failedValLabel.setText(String.valueOf(newFailed));
+            avgValLabel.setText(String.format("%.1f%%", newAvg));
+        });
+
+        tableHeader.getChildren().addAll(tableTitle, spacer, filterField);
 
         TableColumn<ExamAttempt, String> studentCol = col("Student", 150);
         studentCol.setCellValueFactory(d -> {
@@ -302,10 +366,30 @@ public class AdminDashboardScreen {
             }
         });
 
-        table.getColumns().addAll(studentCol, examCol, scoreCol, pctCol, resultCol);
+        TableColumn<ExamAttempt, String> violationsCol = col("Anti-Cheat", 90);
+        violationsCol.setCellValueFactory(d -> {
+            int v = d.getValue().getViolations();
+            return new SimpleStringProperty(v == 0 ? "Clean" : v + " Warning(s)");
+        });
+        violationsCol.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); return; }
+                setText(item);
+                if (item.contains("Warning")) {
+                    setTextFill(Color.web(UITheme.ACCENT_DANGER));
+                    setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
+                } else {
+                    setTextFill(Color.web(UITheme.ACCENT_GREEN));
+                }
+                setAlignment(Pos.CENTER);
+            }
+        });
+
+        table.getColumns().addAll(studentCol, examCol, scoreCol, pctCol, violationsCol, resultCol);
         table.setItems(FXCollections.observableArrayList(all));
 
-        VBox center = new VBox(0, tableTitle, table);
+        VBox center = new VBox(0, tableHeader, table);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         bp.setTop(cards);
@@ -313,7 +397,7 @@ public class AdminDashboardScreen {
         return bp;
     }
 
-    private VBox summaryCard(String icon, String label, String value, String valueColor) {
+    private VBox summaryCard(String icon, String label, Label val) {
         VBox card = new VBox(4);
         card.setStyle("""
             -fx-background-color: #162030;
@@ -324,10 +408,6 @@ public class AdminDashboardScreen {
         card.setPadding(new Insets(18, 20, 18, 20));
 
         Label ico = UITheme.muted(icon + "  " + label);
-        Label val = new Label(value);
-        val.setFont(Font.font("SansSerif", FontWeight.BOLD, 30));
-        val.setTextFill(Color.web(valueColor));
-
         card.getChildren().addAll(ico, val);
         return card;
     }
@@ -405,6 +485,8 @@ public class AdminDashboardScreen {
         bp.setStyle("-fx-background-color: #0F1923;");
         bp.setPadding(new Insets(20, 24, 20, 24));
 
+        final TableView<Question> table = new TableView<>();
+
         // Header
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
@@ -413,11 +495,10 @@ public class AdminDashboardScreen {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button addBtn = UITheme.primaryButton("+ Add Question");
-        addBtn.setOnAction(e -> openAddQuestionDialog(exam, dialog, examTable));
+        addBtn.setOnAction(e -> openAddQuestionDialog(exam, dialog, examTable, table));
         header.getChildren().addAll(title, spacer, addBtn);
 
         // Table
-        TableView<Question> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<Question, String> numCol = col("#", 40);
@@ -503,7 +584,7 @@ public class AdminDashboardScreen {
         dialog.show();
     }
 
-    private void openAddQuestionDialog(Exam exam, Stage parentDialog, TableView<Exam> examTable) {
+    private void openAddQuestionDialog(Exam exam, Stage parentDialog, TableView<Exam> examTable, TableView<Question> qTable) {
         Stage dialog = new Stage();
         dialog.setTitle("Add Question");
         dialog.initOwner(parentDialog);
@@ -550,7 +631,8 @@ public class AdminDashboardScreen {
             exam.addQuestion(new Question(qt, a, b, c, d, correct, m));
             DataStore.get().updateExam(exam);
             dialog.close();
-            // Refresh parent dialog by reopening it
+            // Refresh parent dialog questions table and the main dashboard examTable
+            qTable.setItems(FXCollections.observableArrayList(exam.getQuestions()));
             examTable.refresh();
         });
 
@@ -585,6 +667,141 @@ public class AdminDashboardScreen {
         Scene scene = new Scene(fresh.getRoot(), stage.getScene().getWidth(), stage.getScene().getHeight());
         LoginScreen.applyCSS(scene);
         stage.setScene(scene);
+    }
+
+    private void openStudentReportDialog(User student) {
+        Stage dialog = new Stage();
+        dialog.setTitle("Student Report — " + student.getName());
+        dialog.initOwner(stage);
+
+        BorderPane bp = new BorderPane();
+        bp.setStyle("-fx-background-color: #0F1923;");
+        bp.setPadding(new Insets(20, 24, 20, 24));
+
+        // Header
+        VBox header = new VBox(8);
+        header.setPadding(new Insets(0, 0, 16, 0));
+        
+        Label title = UITheme.title("Student Performance Report");
+        Label studentName = new Label("👤  Name: " + student.getName() + "  ·  ✉  Email: " + student.getEmail());
+        studentName.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
+        studentName.setTextFill(Color.web(UITheme.TEXT_MUTED));
+        
+        header.getChildren().addAll(title, studentName);
+
+        // Fetch student's attempts
+        List<ExamAttempt> attempts = DataStore.get().getAttemptsForStudent(student.getId()).stream()
+            .filter(a -> a.getStatus() == ExamAttempt.Status.SUBMITTED || a.getStatus() == ExamAttempt.Status.TIMED_OUT).toList();
+
+        long passed = attempts.stream().filter(ExamAttempt::isPassed).count();
+        long failed = attempts.size() - passed;
+        double avgScore = attempts.isEmpty() ? 0 :
+            attempts.stream().mapToDouble(ExamAttempt::getPercentage).average().orElse(0);
+
+        // Summary labels
+        Label totalValLabel = new Label(String.valueOf(attempts.size()));
+        Label passedValLabel = new Label(String.valueOf(passed));
+        Label failedValLabel = new Label(String.valueOf(failed));
+        Label avgValLabel = new Label(String.format("%.1f%%", avgScore));
+
+        for (Label lbl : new Label[]{totalValLabel, passedValLabel, failedValLabel, avgValLabel}) {
+            lbl.setFont(Font.font("SansSerif", FontWeight.BOLD, 26));
+        }
+        totalValLabel.setTextFill(Color.web(UITheme.ACCENT));
+        passedValLabel.setTextFill(Color.web(UITheme.ACCENT_GREEN));
+        failedValLabel.setTextFill(Color.web(UITheme.ACCENT_DANGER));
+        avgValLabel.setTextFill(Color.web(UITheme.ACCENT_WARN));
+
+        // Statistics row
+        HBox stats = new HBox(16);
+        stats.setPadding(new Insets(0, 0, 20, 0));
+        stats.getChildren().addAll(
+            summaryCard("📚", "Exams Taken", totalValLabel),
+            summaryCard("✅", "Passed",      passedValLabel),
+            summaryCard("❌", "Failed",      failedValLabel),
+            summaryCard("📊", "Avg Score",   avgValLabel)
+        );
+
+        // Table
+        TableView<ExamAttempt> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<ExamAttempt, String> examCol = col("Exam Title", 220);
+        examCol.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getExamTitle()));
+
+        TableColumn<ExamAttempt, String> dateCol = col("Date", 120);
+        dateCol.setCellValueFactory(d -> {
+            String dateStr = d.getValue().getSubmittedAt() != null
+                ? d.getValue().getSubmittedAt().toLocalDate().toString() : "—";
+            return new SimpleStringProperty(dateStr);
+        });
+
+        TableColumn<ExamAttempt, String> scoreCol = col("Score", 100);
+        scoreCol.setCellValueFactory(d -> new SimpleStringProperty(
+            d.getValue().getScore() + " / " + d.getValue().getTotalMarks()));
+
+        TableColumn<ExamAttempt, String> pctCol = col("Percentage", 100);
+        pctCol.setCellValueFactory(d -> new SimpleStringProperty(
+            String.format("%.1f%%", d.getValue().getPercentage())));
+
+        TableColumn<ExamAttempt, String> resultCol = col("Result", 90);
+        resultCol.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().isPassed() ? "PASS" : "FAIL"));
+        resultCol.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); return; }
+                setText(item);
+                setTextFill("PASS".equals(item)
+                    ? Color.web(UITheme.ACCENT_GREEN)
+                    : Color.web(UITheme.ACCENT_DANGER));
+                setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
+                setAlignment(Pos.CENTER);
+            }
+        });
+
+        TableColumn<ExamAttempt, String> violationsCol = col("Anti-Cheat", 90);
+        violationsCol.setCellValueFactory(d -> {
+            int v = d.getValue().getViolations();
+            return new SimpleStringProperty(v == 0 ? "Clean" : v + " Warning(s)");
+        });
+        violationsCol.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); return; }
+                setText(item);
+                if (item.contains("Warning")) {
+                    setTextFill(Color.web(UITheme.ACCENT_DANGER));
+                    setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
+                } else {
+                    setTextFill(Color.web(UITheme.ACCENT_GREEN));
+                }
+                setAlignment(Pos.CENTER);
+            }
+        });
+
+        table.getColumns().addAll(examCol, dateCol, scoreCol, pctCol, violationsCol, resultCol);
+        table.setItems(FXCollections.observableArrayList(attempts));
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        VBox center = new VBox(0, stats, table);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        // Footer
+        HBox footer = new HBox();
+        footer.setAlignment(Pos.CENTER_RIGHT);
+        footer.setPadding(new Insets(14, 0, 0, 0));
+        Button closeBtn = UITheme.ghostButton("Close");
+        closeBtn.setOnAction(e -> dialog.close());
+        footer.getChildren().add(closeBtn);
+
+        bp.setTop(header);
+        bp.setCenter(center);
+        bp.setBottom(footer);
+
+        Scene scene = new Scene(bp, 750, 520);
+        LoginScreen.applyCSS(scene);
+        dialog.setScene(scene);
+        dialog.show();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

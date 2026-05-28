@@ -11,7 +11,7 @@ public class ExamAttempt {
     private final String studentId;
     private final String examId;
     private final String examTitle;
-    private final LocalDateTime startedAt = LocalDateTime.now();
+    private LocalDateTime startedAt = LocalDateTime.now();
     private LocalDateTime submittedAt;
     private Status status = Status.IN_PROGRESS;
 
@@ -20,6 +20,8 @@ public class ExamAttempt {
     private int score, totalMarks;
     private double percentage;
     private boolean passed;
+
+    private int violations;
 
     public ExamAttempt(String studentId, String examId, String examTitle) {
         this.id = UUID.randomUUID().toString();
@@ -71,6 +73,7 @@ public class ExamAttempt {
     public String getExamId()        { return examId; }
     public String getExamTitle()     { return examTitle; }
     public LocalDateTime getStartedAt()   { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public Status getStatus()         { return status; }
     public int getScore()             { return score; }
@@ -79,4 +82,6 @@ public class ExamAttempt {
     public boolean isPassed()       { return passed; }
     public Map<String, Character> getAnswers() { return answers; }
     public void setStatus(Status s) { this.status = s; }
+    public int getViolations() { return violations; }
+    public void setViolations(int v) { this.violations = v; }
 }

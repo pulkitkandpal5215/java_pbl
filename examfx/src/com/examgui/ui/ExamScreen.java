@@ -42,6 +42,11 @@ public class ExamScreen {
 
     private final BorderPane root;
 
+    // Anti-Cheat tracking
+    private int focusViolations = 0;
+    private boolean isShowingWarning = false;
+    private final javafx.beans.value.ChangeListener<Boolean> focusListener;
+
     public ExamScreen(Exam exam, ExamAttempt attempt, Stage stage) {
         this.exam = exam;
         this.attempt = attempt;
@@ -52,6 +57,14 @@ public class ExamScreen {
         this.root = build();
         startTimer();
         loadQuestion(0);
+
+        // Anti-Cheat: Track window focus changes
+        this.focusListener = (obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                Platform.runLater(() -> handleFocusLoss());
+            }
+        };
+        stage.focusedProperty().addListener(focusListener);
 
         // Intercept close
         stage.setOnCloseRequest(e -> {
@@ -370,7 +383,8 @@ public class ExamScreen {
         
         DataStore.get().updateAttempt(attempt);
 
-        // Reset close handler
+        // Reset close handler and anti-cheat listener
+        stage.focusedProperty().removeListener(focusListener);
         stage.setOnCloseRequest(null);
 
         ResultScreen result = new ResultScreen(exam, attempt, questions, answers, stage);
@@ -388,8 +402,8 @@ public class ExamScreen {
         alert.showAndWait().ifPresent(r -> {
             if (r == ButtonType.YES) {
                 if (timer != null) timer.stop();
-                DataStore.get().getAttemptsForStudent(attempt.getStudentId())
-                    .removeIf(a -> a.getId().equals(attempt.getId()));
+                DataStore.get().deleteAttempt(attempt.getId());
+                stage.focusedProperty().removeListener(focusListener);
                 stage.setOnCloseRequest(null);
                 StudentDashboardScreen sd = new StudentDashboardScreen(stage);
                 Scene scene = new Scene(sd.getRoot(), 900, 640);
@@ -398,5 +412,35 @@ public class ExamScreen {
                 stage.setScene(scene);
             }
         });
+    }
+
+    private void handleFocusLoss() {
+        if (isShowingWarning) return; // Ignore if warning or exit dialog is active
+        
+        focusViolations++;
+        attempt.setViolations(focusViolations);
+        DataStore.get().updateAttempt(attempt);
+
+        if (focusViolations >= 3) {
+            isShowingWarning = true;
+            if (timer != null) timer.stop();
+            stage.focusedProperty().removeListener(focusListener);
+            
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                "You have switched tabs/windows 3 times. Your exam has been automatically terminated and submitted.",
+                ButtonType.OK);
+            alert.setHeaderText("Exam Terminated (Cheat Detected)");
+            alert.showAndWait();
+            doSubmit(false); // Submit immediately
+        } else {
+            isShowingWarning = true;
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                "Switching tabs or applications is strictly prohibited during the exam.\n\n" +
+                "Warning " + focusViolations + " of 2. On the 3rd switch, your exam will be automatically terminated and submitted.",
+                ButtonType.OK);
+            alert.setHeaderText("Anti-Cheat Warning");
+            alert.showAndWait();
+            isShowingWarning = false;
+        }
     }
 }
