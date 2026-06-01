@@ -40,7 +40,7 @@ public class LoginScreen {
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(50, 40, 30, 40));
 
-        Label logo = new Label("🎓 ExamPortal");
+        Label logo = new Label(" ExamPortal");
         logo.setFont(Font.font("SansSerif", FontWeight.BOLD, 28));
         logo.setTextFill(Color.web(UITheme.ACCENT));
 

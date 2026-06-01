@@ -98,7 +98,7 @@ public class ExamScreen {
 
         questionCounter = UITheme.muted("Question 1 of " + questions.size());
 
-        timerLabel = new Label("⏱  --:--");
+        timerLabel = new Label(" --:--");
         timerLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 16));
         timerLabel.setTextFill(Color.web(UITheme.ACCENT));
 

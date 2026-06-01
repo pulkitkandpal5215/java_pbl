@@ -39,14 +39,14 @@ public class StudentDashboardScreen {
 
     private HBox buildNavBar() {
         HBox bar = UITheme.navBar();
-        Label brand = new Label("🎓 ExamPortal");
+        Label brand = new Label(" ExamPortal");
         brand.setFont(Font.font("SansSerif", FontWeight.BOLD, 17));
         brand.setTextFill(Color.web(UITheme.ACCENT));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label userLabel = UITheme.muted("👤 " + student.getName());
+        Label userLabel = UITheme.muted(" " + student.getName());
         Button logoutBtn = UITheme.ghostButton("Logout");
         logoutBtn.setOnAction(e -> {
             DataStore.get().logout();
@@ -67,8 +67,8 @@ public class StudentDashboardScreen {
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        Tab examTab = new Tab("  📚  Available Exams  ", buildExamListPanel());
-        Tab resultTab = new Tab("  📊  My Results  ", buildResultsPanel());
+        Tab examTab = new Tab("    Available Exams  ", buildExamListPanel());
+        Tab resultTab = new Tab("    My Results  ", buildResultsPanel());
         tabs.getTabs().addAll(examTab, resultTab);
         return tabs;
     }
@@ -125,9 +125,9 @@ public class StudentDashboardScreen {
         HBox meta = new HBox(10);
         meta.setAlignment(Pos.CENTER_LEFT);
         meta.getChildren().addAll(
-            UITheme.chip("⏱ " + exam.getDurationMinutes() + " min"),
-            UITheme.chip("❓ " + exam.getQuestions().size() + " questions"),
-            UITheme.chip("✅ Pass: " + exam.getPassingScore() + "%")
+            UITheme.chip(" " + exam.getDurationMinutes() + " min"),
+            UITheme.chip(" " + exam.getQuestions().size() + " questions"),
+            UITheme.chip(" Pass: " + exam.getPassingScore() + "%")
         );
 
         info.getChildren().addAll(titleLabel, desc, meta);

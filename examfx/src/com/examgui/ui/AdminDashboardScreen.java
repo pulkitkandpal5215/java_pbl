@@ -291,10 +291,10 @@ public class AdminDashboardScreen {
         HBox cards = new HBox(16);
         cards.setPadding(new Insets(0, 0, 20, 0));
         cards.getChildren().addAll(
-            summaryCard("📋", "Total Attempts", totalValLabel),
-            summaryCard("✅", "Passed",          passedValLabel),
-            summaryCard("❌", "Failed",           failedValLabel),
-            summaryCard("📊", "Avg Score",        avgValLabel)
+            summaryCard("", "Total Attempts", totalValLabel),
+            summaryCard("", "Passed",          passedValLabel),
+            summaryCard("", "Failed",           failedValLabel),
+            summaryCard("", "Avg Score",        avgValLabel)
         );
 
         // Attempts table

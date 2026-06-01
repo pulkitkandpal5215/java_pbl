@@ -62,7 +62,7 @@ public class ResultScreen {
         boolean passed = attempt.isPassed();
         String verdictColor = passed ? UITheme.ACCENT_GREEN : UITheme.ACCENT_DANGER;
 
-        Label icon = new Label(passed ? "🎉" : "📝");
+        Label icon = new Label(passed ? "" : "");
         icon.setFont(Font.font("SansSerif", 40));
 
         Label verdict = new Label(passed ? "Congratulations! You Passed!" : "Keep Practicing!");
@@ -159,7 +159,7 @@ public class ResultScreen {
         marksLabel.setFont(Font.font("SansSerif", 12));
         marksLabel.setTextFill(correct ? Color.web(UITheme.ACCENT_GREEN) : Color.web(UITheme.TEXT_MUTED));
 
-        String resultIcon = selected == null ? "⬜ Skipped" : correct ? "✅ Correct" : "❌ Incorrect";
+        String resultIcon = selected == null ? " Skipped" : correct ? " Correct" : " Incorrect";
         String resultColor = selected == null ? UITheme.TEXT_MUTED : correct ? UITheme.ACCENT_GREEN : UITheme.ACCENT_DANGER;
         Label resultLabel = new Label(resultIcon);
         resultLabel.setFont(Font.font("SansSerif", 12));
